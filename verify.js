@@ -9,34 +9,17 @@ const etherscanApiKey = process.env.ETHERSCAN_API_KEY
 
 // Mapping of view method names to which contract they should point to
 const contractMap = {
-  rocketNetworkSnapshots: 'RocketNetworkSnapshots',
-  rocketNetworkVoting: 'RocketNetworkVoting',
-  rocketDAOProtocolSettingsProposals: 'RocketDAOProtocolSettingsProposals',
-  rocketDAOProtocolVerifier: 'RocketDAOProtocolVerifier',
-  rocketDAOSecurity: 'RocketDAOSecurity',
-  rocketDAOSecurityActions: 'RocketDAOSecurityActions',
-  rocketDAOSecurityProposals: 'RocketDAOSecurityProposals',
-  rocketDAOProtocolSettingsSecurity: 'RocketDAOProtocolSettingsSecurity',
-  rocketDAOProtocolProposal: 'RocketDAOProtocolProposal',
-  newRocketDAOProtocol: 'RocketDAOProtocol',
-  newRocketDAOProtocolProposals: 'RocketDAOProtocolProposals',
-  newRocketNetworkPrices: 'RocketNetworkPrices',
-  newRocketNodeDeposit: 'RocketNodeDeposit',
-  newRocketNodeManager: 'RocketNodeManager',
-  newRocketNodeStaking: 'RocketNodeStaking',
-  newRocketClaimDAO: 'RocketClaimDAO',
-  newRocketDAOProtocolSettingsRewards: 'RocketDAOProtocolSettingsRewards',
-  newRocketMinipoolManager: 'RocketMinipoolManager',
-  newRocketRewardsPool: 'RocketRewardsPool',
-  newRocketNetworkBalances: 'RocketNetworkBalances',
-  newRocketDAOProtocolSettingsNetwork: 'RocketDAOProtocolSettingsNetwork',
-  newRocketDAOProtocolSettingsAuction: 'RocketDAOProtocolSettingsAuction',
-  newRocketDAOProtocolSettingsDeposit: 'RocketDAOProtocolSettingsDeposit',
-  newRocketDAOProtocolSettingsInflation: 'RocketDAOProtocolSettingsInflation',
-  newRocketDAOProtocolSettingsMinipool: 'RocketDAOProtocolSettingsMinipool',
-  newRocketDAOProtocolSettingsNode: 'RocketDAOProtocolSettingsNode',
-  newRocketMerkleDistributorMainnet: 'RocketMerkleDistributorMainnet',
-}
+  rocketDAOProposal: '0xeb4377AA1333e6331c5F3428Bdd737DF1640790C',
+  rocketDAOProtocolProposal: '0x971D901776bBA081493A8584183754C8E09B534C',
+  rocketDAOProtocolVerifier: '0x4e9f08969cfcA212f4Ea10500c57891338dFec69',
+  rocketDAOProtocolSettingsProposals: '0xd087282cD1EE469d7E6184570b5f3419dF39DB00',
+  rocketDAOProtocolSettingsAuction: '0x387CCc7b41B0aAc2C7611131543c79DE9d0d1C63',
+  rocketMinipoolManager: '0x04b87C2C9F64CA304B9479279cd8e3051f8cAF1E',
+  rocketNodeStaking: '0x2C905c262cE02f582276fa1717ecc6611E82A952',
+  rocketMinipoolDelegate: '0x830111EA19Af1401FBB02Af910C4c6D49a87911B',
+  rocketNodeDeposit: '0x307eb333e754995f23bf13F27169Acd97dE743B5',
+  rocketNetworkVoting: '0x325e4624D606Bd40a1Cf74831cE9724B0Ed68138',
+};
 
 // Create new ethers provider
 const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_RPC)
@@ -45,11 +28,11 @@ const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_RPC)
 let upgradeAddress, etherscanApiUrl
 switch (process.env.NETWORK) {
   case 'holesky':
-    upgradeAddress = '0xa38f23783358e6Ce576441525bE0Ad6Dab5B0eF4'
+    upgradeAddress = '0xC5bc3adEB85657EB82FB692Ef814760799d9Ab0A'
     etherscanApiUrl = 'https://api-holesky.etherscan.io'
     break
   case 'mainnet':
-    upgradeAddress = '0x5dC69083B68CDb5c9ca492A0A5eC581e529fb73C'
+    upgradeAddress = ''
     etherscanApiUrl = 'https://api.etherscan.io'
     break
   default:
@@ -124,30 +107,6 @@ async function verifyTruffleArtifact (contractName, address) {
           fs.readFileSync(`rocketpool/${path}`).toString()
       }
 
-      // Updates were made to some contracts on Goerli after initial verification. They have to be ignored because you cannot reverify
-      // contract on Etherscan after the initial verification
-      if (
-        process.env.NETWORK === 'holesky' &&
-        (
-          (
-            (
-              contractName == 'RocketDAOProtocolVerifier' ||
-              contractName == 'RocketDAOProtocolProposal' ||
-              contractName == 'RocketDAOProtocolProposals'
-            )
-            &&
-            (
-              path ===
-              'contracts/interface/dao/protocol/RocketDAOProtocolVerifierInterface.sol' ||
-              path ===
-              'contracts/interface/network/RocketNetworkVotingInterface.sol'
-            )
-          )
-        )
-      ) {
-        continue
-      }
-
       const actualSource = source.sources[path].content
 
       // Compare the two
@@ -170,7 +129,7 @@ async function verifyTruffleArtifact (contractName, address) {
 
 async function go () {
   // Verify the upgrade contract itself
-  await verifyTruffleArtifact('RocketUpgradeOneDotThree', upgradeAddress)
+  await verifyTruffleArtifact('RocketUpgradeOneDotThreeDotOne', upgradeAddress)
 
   // Construct ABI and contract instance to call all the view methods on upgrade contract
   const upgradeAbi = ['function locked() view returns(bool)']
