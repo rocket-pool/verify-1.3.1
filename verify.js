@@ -9,16 +9,16 @@ const etherscanApiKey = process.env.ETHERSCAN_API_KEY
 
 // Mapping of view method names to which contract they should point to
 const contractMap = {
-  rocketDAOProposal: '0xeb4377AA1333e6331c5F3428Bdd737DF1640790C',
-  rocketDAOProtocolProposal: '0x971D901776bBA081493A8584183754C8E09B534C',
-  rocketDAOProtocolVerifier: '0x4e9f08969cfcA212f4Ea10500c57891338dFec69',
-  rocketDAOProtocolSettingsProposals: '0xd087282cD1EE469d7E6184570b5f3419dF39DB00',
-  rocketDAOProtocolSettingsAuction: '0x387CCc7b41B0aAc2C7611131543c79DE9d0d1C63',
-  rocketMinipoolManager: '0x04b87C2C9F64CA304B9479279cd8e3051f8cAF1E',
-  rocketNodeStaking: '0x2C905c262cE02f582276fa1717ecc6611E82A952',
-  rocketMinipoolDelegate: '0x830111EA19Af1401FBB02Af910C4c6D49a87911B',
-  rocketNodeDeposit: '0x307eb333e754995f23bf13F27169Acd97dE743B5',
-  rocketNetworkVoting: '0x325e4624D606Bd40a1Cf74831cE9724B0Ed68138',
+  newRocketDAOProposal: 'RocketDAOProposal',
+  newRocketDAOProtocolProposal: 'RocketDAOProtocolProposal',
+  newRocketDAOProtocolVerifier: 'RocketDAOProtocolVerifier',
+  newRocketDAOProtocolSettingsProposals: 'RocketDAOProtocolSettingsProposals',
+  newRocketDAOProtocolSettingsAuction: 'RocketDAOProtocolAuction',
+  newRocketMinipoolManager: 'RocketMinipoolManager',
+  newRocketNodeStaking: 'RocketNodeStaking',
+  newRocketMinipoolDelegate: 'RocketMinipoolDelegate',
+  newRocketNodeDeposit: 'RocketNodeDeposit',
+  newRocketNetworkVoting: 'RocketNetworkVoting',
 };
 
 // Create new ethers provider
@@ -28,11 +28,11 @@ const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_RPC)
 let upgradeAddress, etherscanApiUrl
 switch (process.env.NETWORK) {
   case 'holesky':
-    upgradeAddress = '0xC5bc3adEB85657EB82FB692Ef814760799d9Ab0A'
+    upgradeAddress = '0x761C86751255d8eAc9727392DCf3C77831e2A347'
     etherscanApiUrl = 'https://api-holesky.etherscan.io'
     break
   case 'mainnet':
-    upgradeAddress = ''
+    upgradeAddress = '0xc2C81454427b1E53Fdf5d3B45561e3c18F90f9eD'
     etherscanApiUrl = 'https://api.etherscan.io'
     break
   default:
@@ -124,7 +124,7 @@ async function verifyTruffleArtifact (contractName, address) {
     process.exit(1)
   }
 
-  console.log(`✔️Verified contract at ${address} matches ${contractName}`.green)
+  console.log(`✔ Verified contract at ${address} matches ${contractName}`.green)
 }
 
 async function go () {
@@ -132,7 +132,10 @@ async function go () {
   await verifyTruffleArtifact('RocketUpgradeOneDotThreeDotOne', upgradeAddress)
 
   // Construct ABI and contract instance to call all the view methods on upgrade contract
-  const upgradeAbi = ['function locked() view returns(bool)']
+  const upgradeAbi = [
+    'function locked() view returns (bool)',
+    'function corrections(uint256) view returns (address, int256)'
+  ]
   for (const method in contractMap) {
     upgradeAbi.push(`function ${method}() view returns (address)`)
   }
@@ -142,6 +145,18 @@ async function go () {
   for (const method in contractMap) {
     const address = await contract[method]()
     await verifyTruffleArtifact(contractMap[method], address)
+  }
+
+  // Output eth matched corrections
+  console.log('ETH matched corrections:')
+  let i = 0;
+  while (true) {
+    try {
+      let correction = await contract.corrections(i++);
+      console.log(` ${i}: ${correction[0]} = ${correction[1].toString()}`);
+    } catch(e) {
+      break;
+    }
   }
 
   const locked = await contract.locked()
